@@ -1,4 +1,5 @@
 from nltk.corpus import words
+from nltk.tokenize import word_tokenize
 import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 import re
@@ -29,8 +30,8 @@ class App(customtkinter.CTk):
         self.old_spaces = 0
         
         self.textbox = customtkinter.CTkTextbox(master=self)
-        self.textbox.configure(width=400, height=100, corner_radius=0, 
-                               wrap="word",border_spacing=20,font=("Arial",14))
+        self.textbox.configure(width=400, height=100, corner_radius=0,
+                               wrap="word",border_spacing=20,font=("Arial",14),text_color = "white")
         self.textbox.grid(row=0, column=0, sticky="nsew", padx=20, pady=50)
         self.textbox.insert("0.0", "")
         self.textbox.bind("<KeyRelease>",self.check)
@@ -77,7 +78,7 @@ class App(customtkinter.CTk):
             tags_at_cursor = self.textbox.tag_names(selection_indices[0])
             if "clickable" in tags_at_cursor:
                 print("Clickable tag is present at the cursor position")
-                candidate_list = self.find_top_k_nearest_words(selected_word,words.words(),3)
+                candidate_list = self.find_top_k_nearest_words(selected_word,words.words(),5)
                 for candidate in candidate_list:
                     self.listbox.insert(tk.END,candidate)
                 
@@ -98,45 +99,72 @@ class App(customtkinter.CTk):
             sorted_distances = sorted(distances, key=lambda x: x[1]) 
             return [d[0] for d in sorted_distances[:k]] 
     
-        
+    def find_all_indices(self, main_string, substring):
+        indices = []
+        index = main_string.find(substring)
+
+        while index != -1:
+            indices.append(index)
+            index = main_string.find(substring, index + 1)
+
+        return indices
+    
     
     def check(self,event):
-        # Character Count
-        self.lableCount.configure(text = "Character Count: " + str(len(self.textbox.get("1.0", "end-1c"))))
+        #content = self.textbox.get("1.0",tk.END) #1.0 the first char, 1.1 the second..
+        content = self.textbox.get("1.0","end-1c") #1.0 the first char, 1.1 the second..
+        wordCount = re.findall(r'\b\w+\b', content) 
+    
+        # Character Count + Word Count
+        self.lableCount.configure(text = "Character Count: " + str(len(content)) + "\n" + "Word Count: " + str(len(wordCount)))
         
         spell = SpellChecker()
-        
-        content = self.textbox.get("1.0",tk.END) #1.0 the first char, 1.1 the second..
         space_count = content.count(" ")
         
         if space_count != self.old_spaces:
             self.old_spaces = space_count
             
-            # for tag in self.textbox.tag_names():
-            #     self.textbox.tag_delete(tag)
+            for tag in self.textbox.tag_names():
+                self.textbox.tag_delete(tag)
+
+
+        # Non-word Errors Detection : 
+        # Check whether word is in the corpus.
+        
+        # Real-Word Errors Detection:
+        # The word is in the corpus, but wrong context. I.e. :
+        # Typo : Three - There
+        
+
 
             for word in content.split(" "):
+                print(re.sub(r"[^\w]","",word.lower()))
                 if re.sub(r"[^\w]","",word.lower()) not in words.words() and not word.isspace():# check is character and not in the corpus
+                    # position = self.find_all_indices(content,word)
+                    # print(position)
+                    # for index in position:
                     position = content.find(word)
                     self.textbox.tag_add(word, f"1.{position}",f"1.{position+len(word)}")
                     self.textbox.tag_config(word, foreground="red")
-
+                    
                     new_start = "1." + str(position)
                     new_end = "1." + str(position+len(word))
                     print(f"1.{position}",f"1.{position+len(word)}")
                     self.textbox.tag_add("clickable",float(new_start), float(new_end))
 
-                    print("Original word: ", word)
-                    print("Correction:", spell.correction(word))
-                    print(spell.candidates(word))
-                    
-    
+                        # print("Original word: ", word)
+                        # print("Correction:", spell.correction(word))
+                        # print(spell.candidates(word))
+                else:
+                    position = content.find(word)
+                    self.textbox.tag_add(word, f"1.{position}",f"1.{position+len(word)}")
+                    self.textbox.tag_config(word, foreground="white")
+                    # self.textbox.tag_delete(word)
+
 if __name__ == "__main__":
     customtkinter.set_appearance_mode("dark")
     app = App()
     app.mainloop()
-
-    
     
 
     # def check(self,event):
@@ -164,9 +192,6 @@ if __name__ == "__main__":
     #                 # for correction in correction_list:
     #                     # self.scrollable_label_button_frame.add_item(correction)
                         
-
-
-
 
 
 # window.text = ScrolledText(window, font =("Arial",14))
