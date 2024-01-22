@@ -43,10 +43,6 @@ class App(customtkinter.CTk):
         self.button = customtkinter.CTkButton(self, text="Show Candidates", command=self.show_candidate_event, width=35, height=20)  
         self.button.grid(row=1, column=0)
 
-        # self.scrollable_label_button_frame = ScrollableLabelButtonFrame(master=self, width=300, command=self.label_button_frame_event, corner_radius=0)
-        # self.scrollable_label_button_frame.grid(row=0, column=2, padx=0, pady=0, sticky="nsew")
-        # self.scrollable_label_button_frame.grid(row=0, column=1)
-
         # Create a themed style
         self.style = ttk.Style()
 
