@@ -73,7 +73,7 @@ class App(customtkinter.CTk):
             selection_indices = self.textbox.index(tk.SEL_FIRST), self.textbox.index(tk.SEL_LAST)
             print("Selection indices:", selection_indices)
             selected_word = self.textbox.get(selection_indices[0],selection_indices[1])
-
+            print("Selection word:", selected_word)
             #limit to the incorrect word only (added 'clickable' tag)
             tags_at_cursor = self.textbox.tag_names(selection_indices[0])
             if "clickable" in tags_at_cursor:
@@ -110,6 +110,10 @@ class App(customtkinter.CTk):
         return indices
     
     
+    
+    #TODO: Fix the bugggg, If applied the find all index, When manual fix the typo, other typo cannot generate candidate. 
+    
+    
     def check(self,event):
         #content = self.textbox.get("1.0",tk.END) #1.0 the first char, 1.1 the second..
         content = self.textbox.get("1.0","end-1c") #1.0 the first char, 1.1 the second..
@@ -125,6 +129,7 @@ class App(customtkinter.CTk):
             self.old_spaces = space_count
             
             for tag in self.textbox.tag_names():
+                print("tag :", tag)
                 self.textbox.tag_delete(tag)
 
 
@@ -155,11 +160,6 @@ class App(customtkinter.CTk):
                         # print("Original word: ", word)
                         # print("Correction:", spell.correction(word))
                         # print(spell.candidates(word))
-                else:
-                    position = content.find(word)
-                    self.textbox.tag_add(word, f"1.{position}",f"1.{position+len(word)}")
-                    self.textbox.tag_config(word, foreground="white")
-                    # self.textbox.tag_delete(word)
 
 if __name__ == "__main__":
     customtkinter.set_appearance_mode("dark")
