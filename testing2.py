@@ -8,16 +8,6 @@ import customtkinter
 import Levenshtein 
 from tkinter import ttk
     
-class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
-    def __init__(self, master, command=None, **kwargs):
-        super().__init__(master, **kwargs)
-        self.grid_columnconfigure(0, weight=1)
-
-        self.command = command
-        self.radiobutton_variable = customtkinter.StringVar()
-        self.label_list = []
-        self.button_list = []
-        
 class App(customtkinter.CTk):
 
     def __init__(self):
@@ -93,7 +83,7 @@ class App(customtkinter.CTk):
             if "clickable" in tags_at_cursor:
                 print("clickable: ",self.textbox.tag_names(self.selection_indices[0]))
                 print("Clickable tag is present at the cursor position")
-                candidate_list = self.find_top_k_nearest_words(selected_word,words.words(),3)
+                candidate_list = self.find_top_k_nearest_words(selected_word,words.words(),10)
                 for candidate, distance in candidate_list:
                     list_label = f"{candidate} (Edit Distance: {distance})"
                     self.listbox.insert(tk.END,list_label)
@@ -124,15 +114,14 @@ class App(customtkinter.CTk):
         if space_count != self.old_spaces:
             self.old_spaces = space_count
             
-            # for tag in self.textbox.tag_names():
-            #     self.textbox.tag_delete(tag)
+            for tag in self.textbox.tag_names():
+                self.textbox.tag_delete(tag)
 
             for word in content.split(" "):
-                if re.sub(r"[^\w]","",word.lower()) not in words.words() and not word.isspace():# check is character and not in the corpus
+                # check if character not in the corpus amd not spaces
+                if re.sub(r"[^\w]","",word.lower()) not in words.words() and not word.isspace():
                     position = content.find(word)
                     self.textbox.tag_add(word, f"1.{position}",f"1.{position+len(word)}")
-                    self.textbox.tag_config(word, foreground="red")
-
                     new_start = "1." + str(position)
                     new_end = "1." + str(position+len(word))
                     print(f"1.{position}",f"1.{position+len(word)}")
@@ -141,7 +130,7 @@ class App(customtkinter.CTk):
                     print("Original word: ", word)
                     print("Correction:", spell.correction(word))
                     print(spell.candidates(word))
-                    
+                    self.textbox.tag_config(word, foreground="red")
     
 if __name__ == "__main__":
     customtkinter.set_appearance_mode("dark")
