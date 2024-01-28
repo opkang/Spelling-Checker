@@ -225,7 +225,7 @@ class App(customtkinter.CTk):
                     self.textbox.tag_config(word, foreground="red")
                     
                     
-            self.content_tokenize(content)
+            # self.content_tokenize(content)
             print("Done")
             self.processingLabel.configure(text = "Process : Idle")
 
