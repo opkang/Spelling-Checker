@@ -10,6 +10,8 @@ from tkinter import ttk
 from nltk.lm import MLE
 import requests
 from nltk.lm.preprocessing import padded_everygram_pipeline
+from nltk.stem import WordNetLemmatizer
+
 # import io
 # nltk.download('stopwords')
 class App(customtkinter.CTk):
@@ -185,25 +187,8 @@ class App(customtkinter.CTk):
         for start, end in ranges_to_tag:
             self.textbox.tag_add("clickable", float(start), float(end))
             self.textbox.tag_add(word, start, end)
-            self.textbox.tag_config(word, foreground="red")
-
-    # def content_tokenize(self, input_string):
-    #     sentence = TextBlob(input_string.lower())
-    #     wln = WordNetLemmatizer()
-    #     tokens = sentence.words
-    #     for word in tokens:
-    #         lemma = wln.lemmatize(word,pos='v')
-    #         if lemma not in words.words() and not lemma.isspace():
-    #             position = input_string.find(word)
-    #             # print(position, ": " , word)
-    #             self.textbox.tag_add(word, f"1.{position}",f"1.{position+len(word)}")
-    #             self.textbox.tag_config(word, foreground="red")
-                
-    #             new_start = "1." + str(position)
-    #             new_end = "1." + str(position+len(word))
-    #             # print(f"1.{position}",f"1.{position+len(word)}")
-    #             self.textbox.tag_add("clickable",float(new_start), float(new_end))
-    
+            self.textbox.tag_config(word, foreground="red")  
+            
     def check(self,event):
         
         #content = self.textbox.get("1.0",tk.END) #1.0 the first char, 1.1 the second..
@@ -220,7 +205,7 @@ class App(customtkinter.CTk):
             self.processingLabel.configure(text = "Process : Processing...")
             print("processing")
             self.old_spaces = space_count
-            
+
             for tag in self.textbox.tag_names():
                 self.textbox.tag_delete(tag)
 
@@ -233,9 +218,12 @@ class App(customtkinter.CTk):
                     new_start = "1." + str(position)
                     new_end = "1." + str(position+len(word))
                     self.textbox.tag_add("clickable",float(new_start), float(new_end))
-            for tag in self.textbox.tag_names():
-                if(tag != "clickable"):
-                    self.textbox.tag_delete(tag)
+                    
+                    print("Original word: ", word)
+                    print("Correction:", spell.correction(word))
+                    print(spell.candidates(word))
+                    self.textbox.tag_config(word, foreground="red")
+                    
                     
             self.content_tokenize(content)
             print("Done")
@@ -263,10 +251,6 @@ class App(customtkinter.CTk):
         #             print(f"1.{position}",f"1.{position+len(word)}")
         #             self.textbox.tag_add("clickable",float(new_start), float(new_end))
 
-                    print("Original word: ", word)
-                    print("Correction:", spell.correction(word))
-                    print(spell.candidates(word))
-                    self.textbox.tag_config(word, foreground="red")
     
 
 
