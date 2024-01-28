@@ -1,5 +1,7 @@
+import nltk
 from nltk.corpus import words
 from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
 import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 import re
@@ -8,7 +10,10 @@ from spellchecker import SpellChecker
 import customtkinter
 import Levenshtein 
 from tkinter import ttk
+import spacy
     
+nltk.download('wordnet')
+spacynlp = spacy.load("en_core_web_sm")
 class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
     def __init__(self, master, command=None, **kwargs):
         super().__init__(master, **kwargs)
@@ -38,8 +43,12 @@ class App(customtkinter.CTk):
         # If want to add new binding events, put add='+', if not it will replaced by it
         # self.textbox.bind('<Double-1>',self.double_click, add='+') 
         
+        self.processingLabel = customtkinter.CTkLabel(self,text="Process : Idle")
+        self.processingLabel.grid(row=3, column=0)  
+        
         self.lableCount = customtkinter.CTkLabel(self,text="Word Count: 0")
         self.lableCount.grid(row=2, column=0)  
+    
         
         self.button = customtkinter.CTkButton(self, text="Show Candidates", command=self.show_candidate_event, width=35, height=20)  
         self.button.grid(row=1, column=0)
@@ -91,6 +100,9 @@ class App(customtkinter.CTk):
     def label_button_frame_event(self, item):
         print(f"label button frame clicked: {item}")
 
+# =================================================================================================
+# Main function
+
     def find_top_k_nearest_words(self,query_input, words_list, k): 
             distances = [] 
             for word in words_list: 
@@ -110,56 +122,98 @@ class App(customtkinter.CTk):
         return indices
     
     
-    
-    #TODO: Fix the bugggg, If applied the find all index, When manual fix the typo, other typo cannot generate candidate. 
-    
+    # used for reduce the length 
+    # i.e : amazzziiing
+    def reduce_lengthening(text):
+        pattern = re.compile(r"(.)\1{2,}")
+        return pattern.sub(r"\1\1", text)
+
+    def content_tokenize(self, input_string):
+        sentence = TextBlob(input_string.lower())
+        wln = WordNetLemmatizer()
+        tokens = sentence.words
+        ranges_to_tag = []  # Accumulate ranges to tag
+        for word in tokens:
+            lemma = wln.lemmatize(word, pos='v')
+            # print(lemma)
+            if lemma not in words.words() and not lemma.isspace():
+                position = self.find_all_indices(input_string.lower(),word)
+                for index in position:
+                    start = f"1.{index}"
+                    end = f"1.{index+len(word)}"
+                    ranges_to_tag.append((start, end))
+
+        # Tag all ranges in a single call
+        for start, end in ranges_to_tag:
+            self.textbox.tag_add("clickable", float(start), float(end))
+            self.textbox.tag_add(word, start, end)
+            self.textbox.tag_config(word, foreground="red")
+
+    # def content_tokenize(self, input_string):
+    #     sentence = TextBlob(input_string.lower())
+    #     wln = WordNetLemmatizer()
+    #     tokens = sentence.words
+    #     for word in tokens:
+    #         lemma = wln.lemmatize(word,pos='v')
+    #         if lemma not in words.words() and not lemma.isspace():
+    #             position = input_string.find(word)
+    #             # print(position, ": " , word)
+    #             self.textbox.tag_add(word, f"1.{position}",f"1.{position+len(word)}")
+    #             self.textbox.tag_config(word, foreground="red")
+                
+    #             new_start = "1." + str(position)
+    #             new_end = "1." + str(position+len(word))
+    #             # print(f"1.{position}",f"1.{position+len(word)}")
+    #             self.textbox.tag_add("clickable",float(new_start), float(new_end))
     
     def check(self,event):
+        
         #content = self.textbox.get("1.0",tk.END) #1.0 the first char, 1.1 the second..
         content = self.textbox.get("1.0","end-1c") #1.0 the first char, 1.1 the second..
+        # self.detection(content)
         wordCount = re.findall(r'\b\w+\b', content) 
     
         # Character Count + Word Count
         self.lableCount.configure(text = "Character Count: " + str(len(content)) + "\n" + "Word Count: " + str(len(wordCount)))
-        
         spell = SpellChecker()
         space_count = content.count(" ")
-        
         if space_count != self.old_spaces:
+            self.processingLabel.configure(text = "Process : Processing...")
+            print("processing")
             self.old_spaces = space_count
-            
             for tag in self.textbox.tag_names():
-                print("tag :", tag)
-                self.textbox.tag_delete(tag)
-
-
-        # Non-word Errors Detection : 
-        # Check whether word is in the corpus.
-        
-        # Real-Word Errors Detection:
-        # The word is in the corpus, but wrong context. I.e. :
-        # Typo : Three - There
-        
-
-
-            for word in content.split(" "):
-                print(re.sub(r"[^\w]","",word.lower()))
-                if re.sub(r"[^\w]","",word.lower()) not in words.words() and not word.isspace():# check is character and not in the corpus
-                    # position = self.find_all_indices(content,word)
-                    # print(position)
-                    # for index in position:
-                    position = content.find(word)
-                    self.textbox.tag_add(word, f"1.{position}",f"1.{position+len(word)}")
-                    self.textbox.tag_config(word, foreground="red")
+                if(tag != "clickable"):
+                    self.textbox.tag_delete(tag)
                     
-                    new_start = "1." + str(position)
-                    new_end = "1." + str(position+len(word))
-                    print(f"1.{position}",f"1.{position+len(word)}")
-                    self.textbox.tag_add("clickable",float(new_start), float(new_end))
+            self.content_tokenize(content)
+            print("Done")
+            self.processingLabel.configure(text = "Process : Idle")
 
-                        # print("Original word: ", word)
-                        # print("Correction:", spell.correction(word))
-                        # print(spell.candidates(word))
+        # # Non-word Errors Detection : 
+        # # Check whether word is in the corpus.
+        
+        # # Real-Word Errors Detection:
+        # # The word is in the corpus, but wrong context. I.e. :
+        # # Typo : Three - There
+        
+        #     for word in content.split(" "):
+        #         print(re.sub(r"[^\w]","",word.lower()))
+        #         if re.sub(r"[^\w]","",word.lower()) not in words.words() and not word.isspace():# check is character and not in the corpus
+        #             # position = self.find_all_indices(content,word)
+        #             # print(position)
+        #             # for index in position:
+        #             position = content.find(word)
+        #             self.textbox.tag_add(word, f"1.{position}",f"1.{position+len(word)}")
+        #             self.textbox.tag_config(word, foreground="red")
+                    
+        #             new_start = "1." + str(position)
+        #             new_end = "1." + str(position+len(word))
+        #             print(f"1.{position}",f"1.{position+len(word)}")
+        #             self.textbox.tag_add("clickable",float(new_start), float(new_end))
+
+        #                 # print("Original word: ", word)
+        #                 # print("Correction:", spell.correction(word))
+        #                 # print(spell.candidates(word))
 
 if __name__ == "__main__":
     customtkinter.set_appearance_mode("dark")
