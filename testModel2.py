@@ -22,6 +22,7 @@ class BiGramLanguageModel:
         else:
             # Handle unseen words by assigning a small probability
             return 1e-5
+        
     def generate_candidates(self, input_word, num_candidates=5):
             # Generate candidate words based on the input word
             if input_word in self.vocabulary:
@@ -49,8 +50,10 @@ with open('bi_gram_model.pkl', 'rb') as file:
     loaded_model = pickle.load(file)
 
 # Example usage:
-current_word_example = "playing"
+current_word_example = "programming"
 predicted_word = loaded_model.predict_next_word(current_word_example)
 candidates = loaded_model.generate_candidates(current_word_example)
 print(f"Given '{current_word_example}', the predicted next word is '{predicted_word}'.")
 print(f"Given '{current_word_example}', the Candidate are '{candidates}'.")
+
+

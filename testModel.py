@@ -2,6 +2,7 @@ import pickle
 from collections import defaultdict
 import nltk
 from nltk.corpus import brown
+from textblob import TextBlob
 
 def default_dict():
     return defaultdict(int)
@@ -15,8 +16,10 @@ class BiGramLanguageModel:
 
     def train(self, corpus):
         # Train the bi-gram language model on a given corpus
-        tokens = corpus.split()
-        print(tokens)
+        # tokens = corpus.split()
+        tokens = TextBlob(corpus).words
+        
+        # print(tokens)
         for i in range(len(tokens) - 1):
             current_word = tokens[i]
             next_word = tokens[i + 1]
@@ -29,9 +32,8 @@ class BiGramLanguageModel:
 
     def train_nltk_corpus(self, corpus_name):
         # Train the model on an NLTK corpus
-        corpus = " ".join(brown.words(categories=corpus_name))
+        corpus = " ".join(brown.words())
         self.train(corpus)
-        
 
     def calculate_probability(self, current_word, next_word):
         # Calculate the conditional probability P(next_word | current_word)
@@ -90,9 +92,10 @@ model.train_nltk_corpus('news')
 # model.save_model('bi_gram_model.pkl')
 
 # Load the model at another place
-loaded_model = BiGramLanguageModel.load_model('bi_gram_model.pkl')
+# loaded_model = BiGramLanguageModel.load_model('bi_gram_model.pkl')
 
 # Predict using the loaded model
-current_word_example = "This"
-predicted_word = loaded_model.predict_next_word(current_word_example)
-print(f"Given '{current_word_example}', the predicted next word is '{predicted_word}'.")
+current_word_example = "There are tree programming code."
+for i in current_word_example.split(' '):
+    predicted_word = model.predict_next_word(i)
+    print(f"Given '{i}', the predicted next word is '{predicted_word}'.")
